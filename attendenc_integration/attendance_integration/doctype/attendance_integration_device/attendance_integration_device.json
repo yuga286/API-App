@@ -11,6 +11,8 @@
   "device_name",
   "company",
   "location",
+  "latitude",
+  "longitude",
   "last_seen",
   "app_version",
   "description"
@@ -50,6 +52,18 @@
    "fieldname": "location",
    "fieldtype": "Data",
    "label": "Location"
+  },
+  {
+   "fieldname": "latitude",
+   "fieldtype": "Float",
+   "label": "Latitude",
+   "precision": "7"
+  },
+  {
+   "fieldname": "longitude",
+   "fieldtype": "Float",
+   "label": "Longitude",
+   "precision": "7"
   },
   {
    "fieldname": "last_seen",

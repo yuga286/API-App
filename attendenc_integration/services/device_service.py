@@ -18,7 +18,7 @@ def validate_device(device_id: str | None) -> dict | None:
 	device = frappe.db.get_value(
 		"Attendance Integration Device",
 		{"device_id": device_id},
-		["name", "device_id", "enabled", "company"],
+		["name", "device_id", "enabled", "company", "latitude", "longitude"],
 		as_dict=True,
 	)
 	if not device:
