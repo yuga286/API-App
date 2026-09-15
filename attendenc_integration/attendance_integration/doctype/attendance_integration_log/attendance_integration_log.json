@@ -35,7 +35,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Received\nProcessed\nDuplicate\nFailed",
+   "options": "Received\nProcessing\nProcessed\nDuplicate\nFailed",
    "reqd": 1,
    "search_index": 1
   },

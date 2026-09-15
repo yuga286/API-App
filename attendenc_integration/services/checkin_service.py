@@ -8,7 +8,10 @@ from attendenc_integration.services.employee_service import get_employee_by_atte
 from attendenc_integration.services.idempotency_service import (
 	existing_processed_response,
 	find_fallback_duplicate,
+	mark_duplicate,
+	mark_employee_resolved,
 	mark_failed,
+	mark_processing,
 	mark_processed,
 	reserve_event,
 )
@@ -17,25 +20,33 @@ from attendenc_integration.services.validation_service import normalize_checkin_
 from attendenc_integration.utils.responses import IntegrationError
 
 
+GEOLOCATION_REQUIRED_MESSAGE = "Latitude and longitude values are required for checking in."
+
+
 def create_checkin(raw_payload: dict) -> dict:
 	ensure_enabled()
 	payload = normalize_checkin_payload(raw_payload)
 	validate_device(payload.get("device_id"))
 
 	log = None
+	employee_name = None
 	try:
 		log, duplicate_event = reserve_event(payload)
 		if duplicate_event:
 			processed = existing_processed_response(log)
 			if processed:
 				return {"status": "duplicate", "code": "ALREADY_PROCESSED", **processed}
-			if log.status == "Received":
+			if log.status in ("Received", "Processing"):
 				raise IntegrationError("ALREADY_PROCESSED", "Punch is already being processed")
 
+		mark_processing(log)
 		employee = get_employee_by_attendance_device_id(payload["attendance_device_id"])
+		employee_name = employee.name
+		mark_employee_resolved(log, employee_name)
+
 		fallback_duplicate = find_fallback_duplicate(payload, employee.name)
 		if fallback_duplicate:
-			mark_processed(log, employee.name, fallback_duplicate)
+			mark_duplicate(log, employee.name, fallback_duplicate)
 			return {
 				"status": "duplicate",
 				"code": "ALREADY_PROCESSED",
@@ -56,11 +67,12 @@ def create_checkin(raw_payload: dict) -> dict:
 		mark_processed(log, employee.name, doc.name)
 		return {"status": "created", "code": "OK", "employee": employee.name, "employee_checkin": doc.name}
 	except IntegrationError as exc:
-		mark_failed(log, exc.code, exc.message)
+		mark_failed(log, exc.code, exc.message, employee=employee_name)
 		raise
 	except Exception as exc:
-		mark_failed(log, "CHECKIN_CREATION_FAILED", str(exc))
-		raise IntegrationError("CHECKIN_CREATION_FAILED", str(exc))
+		code = "GEOLOCATION_REQUIRED" if GEOLOCATION_REQUIRED_MESSAGE in str(exc) else "CHECKIN_CREATION_FAILED"
+		mark_failed(log, code, str(exc), employee=employee_name)
+		raise IntegrationError(code, str(exc))
 
 
 def get_status(event_id: str) -> dict:

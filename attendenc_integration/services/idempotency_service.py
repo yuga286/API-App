@@ -51,12 +51,28 @@ def reserve_event(payload: dict):
 def existing_processed_response(log) -> dict | None:
 	if not log:
 		return None
-	if log.status == "Processed" and log.employee_checkin:
+	if log.status in ("Processed", "Duplicate") and log.employee_checkin:
 		return {
 			"employee": log.employee,
 			"employee_checkin": log.employee_checkin,
 		}
 	return None
+
+
+def mark_processing(log, employee: str | None = None) -> None:
+	if not log:
+		return
+	log.status = "Processing"
+	if employee:
+		log.employee = employee
+	log.save(ignore_permissions=True)
+
+
+def mark_employee_resolved(log, employee: str) -> None:
+	if not log:
+		return
+	log.employee = employee
+	log.save(ignore_permissions=True)
 
 
 def mark_processed(log, employee, employee_checkin: str) -> None:
@@ -71,11 +87,24 @@ def mark_processed(log, employee, employee_checkin: str) -> None:
 	log.save(ignore_permissions=True)
 
 
+def mark_duplicate(log, employee, employee_checkin: str) -> None:
+	if not log:
+		return
+	log.employee = employee
+	log.employee_checkin = employee_checkin
+	log.status = "Duplicate"
+	log.error_code = None
+	log.error_message = None
+	log.processed_at = now_datetime()
+	log.save(ignore_permissions=True)
+
+
 def mark_failed(log, code: str, message: str, employee: str | None = None) -> None:
 	if not log:
 		return
 	log.status = "Failed"
-	log.employee = employee
+	if employee:
+		log.employee = employee
 	log.error_code = code
 	log.error_message = message[:1000] if message else None
 	log.processed_at = now_datetime()
