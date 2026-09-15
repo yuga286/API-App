@@ -27,7 +27,7 @@ def create_checkin(raw_payload: dict) -> dict:
 	ensure_enabled()
 	payload = normalize_checkin_payload(raw_payload)
 	device = validate_device(payload.get("device_id"))
-	apply_trusted_device_coordinates(payload, device)
+	apply_registered_device_coordinates(payload, device)
 
 	log = None
 	employee_name = None
@@ -76,9 +76,9 @@ def create_checkin(raw_payload: dict) -> dict:
 		raise IntegrationError(code, str(exc))
 
 
-def apply_trusted_device_coordinates(payload: dict, device: dict | None) -> None:
-	payload["latitude"] = None
-	payload["longitude"] = None
+def apply_registered_device_coordinates(payload: dict, device: dict | None) -> None:
+	if payload.get("latitude") is not None or payload.get("longitude") is not None:
+		return
 	if not device:
 		return
 
