@@ -77,6 +77,6 @@ def normalize_checkin_payload(payload: dict) -> dict:
 		"device_id": validate_device_id(payload.get("device_id")),
 		"log_type": normalize_log_type(payload.get("log_type")),
 		"skip_auto_attendance": normalize_bool(payload.get("skip_auto_attendance"), "skip_auto_attendance"),
-		"latitude": validate_latitude(payload.get("latitude")),
-		"longitude": validate_longitude(payload.get("longitude")),
+		"latitude": None,
+		"longitude": None,
 	}
